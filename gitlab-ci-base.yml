@@ -1,0 +1,58 @@
+image: moodlehq/moodle-php-apache:7.0-stretch
+services:
+  - postgres:latest
+
+cache:
+  paths:
+    - vendor/
+    - node_modules/
+
+variables:
+  MOODLE_BRANCH: "MOODLE_35_STABLE"
+  DB: "pgsql"
+  POSTGRES_DB: moodle
+  POSTGRES_DB_USED: mdlunit
+  POSTGRES_USER: moodle
+  POSTGRES_PASSWORD: moodle
+  TRAVIS_BUILD_DIR: "$CI_PROJECT_DIR"
+
+# Prepare the moodle-plugin-ci env.:
+# - Moodle installation MUST be outside $CI_PROJECT_DIR
+# - moodle-plugin-ci MUST be in the $PATH
+# - Database MUST be dropped prior to installation
+# - Composer MUST be in the path for moodle-plugin-ci
+# - Moodle 3.5 require Node v8 <9
+before_script:
+  - apt-get update
+  - seq 1 8 | xargs -I{} mkdir -p /usr/share/man/man{} # fix issue with postgresql-client on slim images. https://bit.ly/2JzEMZf
+  - apt-get install -y git unzip postgresql-client-9.6
+  - echo "Uninstall previous Moodle version"
+  - export PGPASSWORD=$POSTGRES_PASSWORD
+  - psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "DROP DATABASE IF EXISTS mdlunit;" || true
+  - echo "Install NPM"
+  - curl -sL https://deb.nodesource.com/setup_8.x | bash -
+  - apt-get install -y nodejs
+  - echo "Run moodle-plugin-ci"
+  - rm -Rf ../tmp && mkdir ../tmp && cd ../tmp
+  - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer
+  - rm -Rf ci && rm -Rf moodle && composer create-project -n --no-dev moodlerooms/moodle-plugin-ci ci ^2
+  - export PATH="$(cd ci/bin; pwd):$(cd ci/vendor/bin; pwd):$PATH"
+  - chmod u+x ci/bin/moodle-plugin-ci
+  - echo "Run Moodle installation from tmp"
+  - ./ci/bin/moodle-plugin-ci install --db-user=$POSTGRES_USER --db-name=$POSTGRES_DB_USED --db-pass=$POSTGRES_PASSWORD --db-host=postgres -vvv -n --ansi
+
+.job_template: &job_definition
+  script:
+    - EXIT_STATUS=0
+    - moodle-plugin-ci phplint || EXIT_STATUS=$?
+    - moodle-plugin-ci phpcpd || EXIT_STATUS=$?
+    - moodle-plugin-ci phpmd || EXIT_STATUS=$?
+    - moodle-plugin-ci codechecker || EXIT_STATUS=$?
+    - moodle-plugin-ci validate || EXIT_STATUS=$?
+    - moodle-plugin-ci savepoints || EXIT_STATUS=$?
+    - moodle-plugin-ci mustache || EXIT_STATUS=$?
+    - moodle-plugin-ci grunt || EXIT_STATUS=$?
+    - moodle-plugin-ci phpdoc || EXIT_STATUS=$?
+    - moodle-plugin-ci phpunit || EXIT_STATUS=$?
+    - moodle-plugin-ci behat || EXIT_STATUS=$?
+    - exit $EXIT_STATUS

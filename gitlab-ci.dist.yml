@@ -1,0 +1,12 @@
+include:
+  - project: 'moodle-ci'
+    ref: runners
+    file: 'gitlab-ci-base.yml'
+
+mdl35-71:
+  <<: *job_definition
+  image: moodlehq/moodle-php-apache:7.0-stretch
+  tags:
+    - docker
+  variables:
+    MOODLE_BRANCH: "MOODLE_35_STABLE"
