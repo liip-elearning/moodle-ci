@@ -15,6 +15,7 @@ variables:
   POSTGRES_USER: moodle
   POSTGRES_PASSWORD: moodle
   TRAVIS_BUILD_DIR: "$CI_PROJECT_DIR"
+  NODE_SETUP_VERSION: 8.x
 
 # Prepare the moodle-plugin-ci env.:
 # - Moodle installation MUST be outside $CI_PROJECT_DIR
@@ -30,7 +31,7 @@ before_script:
   - export PGPASSWORD=$POSTGRES_PASSWORD
   - psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "DROP DATABASE IF EXISTS mdlunit;" || true
   - echo "Install NPM"
-  - curl -sL https://deb.nodesource.com/setup_8.x | bash -
+  - curl -sL https://deb.nodesource.com/setup_${NODE_SETUP_VERSION} | bash -
   - apt-get install -y nodejs
   - echo "Run moodle-plugin-ci"
   - rm -Rf ../tmp && mkdir ../tmp && cd ../tmp
