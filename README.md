@@ -30,5 +30,5 @@ You can follow the [Getting started](https://blackboard-open-source.github.io/mo
 It's not possible to run the moodle-plugin-ci on your computer locally.
 But we forked the project to make it happen and submitted a PR here: <https://github.com/blackboard-open-source/moodle-plugin-ci/pull/94>
 
-Note that we init the script inside a Vagrant Box.
-A sample is available in this repository as `moodle-plugin-ci-sample.sh`.
+You can copy and customize the file `moodle-plugin-ci.dist.sh` in your instance/host to run the tests locally.
+
