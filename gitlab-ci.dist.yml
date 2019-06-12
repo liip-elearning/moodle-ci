@@ -25,4 +25,5 @@ mdl35-70:
   image: moodlehq/moodle-php-apache:7.0-stretch
   tags:
     - docker
-
+  variables:
+    MOODLE_BRANCH: "MOODLE_35_STABLE"
